@@ -5,3 +5,4 @@ cohere
 pymongo
 requests
 pymongo[srv]
+groq
