@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+pydantic
+cohere
+pymongo
+requests
+pymongo[srv]
