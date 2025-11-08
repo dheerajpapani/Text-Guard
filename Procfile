@@ -1,1 +1,4 @@
-web: bash -lc 'cd backend && uvicorn main:app --host 0.0.0.0 --port '
+web:
+bash
+-lc
+cd backend && uvicorn main:app --host 0.0.0.0 --port \
