@@ -1,0 +1,7 @@
+/* --- Light-only baseline to prevent accidental dark mode --- */
+:root { color-scheme: light; }
+html, body, #root {
+  background: #f6f7f8;  /* soft light app bg */
+  color: #111827;
+  height: 100%;
+}
