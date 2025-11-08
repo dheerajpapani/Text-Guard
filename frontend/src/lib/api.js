@@ -2,7 +2,7 @@
 // This connects your React frontend to your Python backend.
 
 // Your new, non-standard port!
-const API_BASE_URL = "http://localhost:8088"; 
+const API_BASE_URL = "https://text-guard.onrender.com"; 
 
 /**
  * Calls the backend /moderate endpoint
