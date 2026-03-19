@@ -21,20 +21,20 @@
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Core Features](#core-features)
-- [Product Flow](#product-flow)
-- [System Architecture](#system-architecture)
-- [Moderation Logic](#moderation-logic)
-- [Tech Stack](#tech-stack)
-- [Repository Structure](#repository-structure)
-- [Getting Started](#getting-started)
-- [Environment Variables](#environment-variables)
-- [API Surface](#api-surface)
-- [Workflow Notes](#workflow-notes)
-- [Deployment](#deployment)
-- [Troubleshooting](#troubleshooting)
-- [Author](#author)
+- [Overview](#-overview)
+- [Core Features](#-core-features)
+- [Product Flow](#-product-flow)
+- [System Architecture](#-system-architecture)
+- [Moderation Logic](#-moderation-logic)
+- [Tech Stack](#-tech-stack)
+- [Repository Structure](#-repository-structure)
+- [Getting Started](#-getting-started)
+- [Environment Variables](#-environment-variables)
+- [API Surface](#-api-surface)
+- [Workflow Notes](#-workflow-notes)
+- [Deployment](#-deployment)
+- [Troubleshooting](#-troubleshooting)
+- [Author](#-author)
 
 ---
 
@@ -42,16 +42,9 @@
 
 **Text-Guard** is a moderation-focused full-stack workspace for evaluating risky user-generated text before it reaches production systems. It combines:
 
-- a **rule-based signal layer** for direct abuse, spam, threats, coercion, and obfuscated wording,
-- an **LLM moderation layer** using **Groq** first and **Hugging Face** as fallback,
-- a **review queue** for human follow-up,
-- a **saved test-case memory** for regression suites,
-- and **workspace-scoped controls** so the same backend can be used across separate environments or tenants.
-
-This project is currently shaped as a **moderation simulation lab** rather than a fully integrated end-user product. That is a deliberate strength: it gives teams a controlled place to tune policies, validate thresholds, preserve edge cases, and rehearse review operations before wiring in real traffic.
-
-> [!IMPORTANT]
-> **Current scope:** Text-Guard is a moderation workspace and API foundation. It does not yet include production auth, reviewer role management, or live product ingestion connectors.
+- a **rule-based signal layer** for direct abuse, spam, threats, and obfuscation,
+- an **LLM moderation layer** using **Groq** (primary) and **Hugging Face** (fallback),
+- a **review queue** for human follow-up and decision tracking.
 
 ---
 
@@ -59,14 +52,12 @@ This project is currently shaped as a **moderation simulation lab** rather than 
 
 | Feature | Description |
 | --- | --- |
-| Hybrid Moderation Engine | Merges deterministic rule signals with LLM category scoring for stronger abuse and evasion detection. |
+| Hybrid Moderation | Merges deterministic rule signals with LLM category scoring for stronger evasion detection. |
 | Obfuscation Awareness | Detects spaced-out, symbol-swapped, and misspelled abusive language like `k y s` or `1d10t`. |
-| Policy-Based Routing | Converts category scores into `allow`, `review`, or `block` outcomes using configurable thresholds. |
-| Review Queue | Lets reviewers assign owners, add notes, resolve cases, approve allows, or confirm blocks. |
-| Simulation Lab | Provides a frontend workflow to test content, compare policy presets, and submit items to review. |
-| Regression Memory | Saves moderation cases and imports or exports them as reusable JSON suites. |
-| Analytics Snapshot | Tracks queue status, moderation volume, top categories, top flags, and recent trend data. |
-| Workspace Scoping | Uses `X-Workspace-Id` and optional `X-Workspace-Key` headers to isolate data by workspace. |
+| Review Queue | Lets reviewers assign owners, add notes, and confirm moderation actions. |
+| Simulation Lab | Test content, compare policy presets, and submit items to review from a single workspace. |
+| Regression Memory | Saves moderation cases and imports/exports them as reusable suites. |
+| Analytics Snapshot | Tracks moderation volume, top categories, and recent trends. |
 
 ---
 
@@ -123,98 +114,28 @@ graph TD
 
 ## Moderation Logic
 
-Text-Guard does not rely on a single classifier. The moderation decision is built from two parallel inputs:
+Text-Guard builds decisions from two parallel inputs:
 
-### 1. Rule Signals
-
-The backend uses curated regex and canonicalization logic to detect:
-
-- direct slurs and abuse,
-- threatening language,
-- violent phrasing,
-- self-harm references,
-- explicit sexual content,
-- manipulative scam pressure,
-- repeated characters and multi-link spam,
-- and obfuscated phrasing through compacted character matching.
-
-### 2. LLM Scoring
-
-The backend then asks an LLM to return JSON-only moderation output with:
-
-- `score`
-- `label`
-- `matched_seed`
-- `categories`
-
-Provider priority is:
-
-1. **Groq** via `GROQ_API_KEY`
-2. **Hugging Face Inference API** via `HF_API_TOKEN`
-3. **No external model** if neither is configured
-
-### 3. Final Action Selection
-
-Merged category scores are compared against thresholds:
-
-- `score >= BLOCK_THRESHOLD` -> `block`
-- `score >= REVIEW_THRESHOLD` -> `review`
-- otherwise -> `allow`
-
-Default thresholds from the repo:
-
-- `REVIEW_THRESHOLD=0.45`
-- `BLOCK_THRESHOLD=0.85`
+1.  **Rule Signals**: Curated regex and canonicalization for direct slurs, threats, and obfuscated text.
+2.  **LLM Scoring**: JSON-only analysis from Groq or Hugging Face.
+3.  **Action Selection**: Merged scores vs thresholds (default: `REVIEW=0.45`, `BLOCK=0.85`).
 
 ---
 
 ## Tech Stack
 
-- **Backend:** FastAPI, Uvicorn, Pydantic, python-dotenv
-- **Moderation Providers:** Groq, Hugging Face Inference API
-- **Persistence:** MongoDB via `pymongo`
-- **Frontend:** React 19, React Router 7, Vite
-- **UI Utilities:** Framer Motion, Lucide React, clsx, tailwind-merge
-
----
-
-## Repository Structure
-
-```text
-Text-Guard/
-├── backend/
-│   ├── main.py                  # FastAPI app entrypoint
-│   ├── routes.py                # Moderation, review, analytics, policy, and suite APIs
-│   ├── providers.py             # Groq/HF provider logic and Mongo persistence helpers
-│   ├── rules.py                 # Regex + obfuscation-aware moderation rules
-│   ├── config.py                # Environment loading and runtime settings
-│   └── requirements.txt         # Python dependencies
-├── frontend/
-│   ├── src/
-│   │   ├── components/          # Header and shared UI primitives
-│   │   ├── lib/
-│   │   │   └── api.js           # API client with workspace headers
-│   │   └── views/
-│   │       ├── Home.jsx         # Product overview and analytics dashboard
-│   │       ├── SimulationLab.jsx# Moderation simulator and policy workspace
-│   │       └── Review.jsx       # Review queue and decision surface
-│   ├── .env.example             # Frontend env template
-│   └── package.json             # Frontend scripts and dependencies
-├── .env.example                 # Root/backend env template
-├── Procfile                     # Render-style backend startup command
-└── README.md
-```
+- **Backend:** FastAPI, Uvicorn, Pydantic, pymongo, groq
+- **Frontend:** React 19, React Router 7 (HashRouter), Vite
+- **UI Utilities:** Framer Motion, Lucide React, Tailwind CSS
 
 ---
 
 ## Getting Started
 
 ### Prerequisites
-
-- Python 3.10+
-- Node.js 18+
-- MongoDB instance for persistence features
-- Groq API key or Hugging Face token for model moderation
+- Python 3.10+, Node.js 18+
+- MongoDB instance (e.g., MongoDB Atlas)
+- Groq API key
 
 ### 1. Clone the Repository
 
@@ -224,40 +145,18 @@ cd Text-Guard
 ```
 
 ### 2. Backend Setup
-
 ```bash
 cd backend
 python -m venv .venv
-```
-
-Activate the virtual environment:
-
-```powershell
-.venv\Scripts\activate
-```
-
-Install dependencies:
-
-```bash
+# Activate venv: .venv\Scripts\activate (Win) or source .venv/bin/activate (Unix)
 pip install -r requirements.txt
 ```
-
-Create your environment file in the project root or backend-resolved working directory:
-
 ```bash
 copy ..\.env.example ..\.env
-```
-
-Run the API:
-
-```bash
 uvicorn main:app --host 0.0.0.0 --port 8088 --reload
 ```
 
 ### 3. Frontend Setup
-
-Open a second terminal:
-
 ```bash
 cd frontend
 npm install
@@ -265,66 +164,23 @@ copy .env.example .env
 npm run dev
 ```
 
-Frontend default local URL:
-
-```text
-http://localhost:5173
-```
-
-Backend default local URL:
-
-```text
-http://localhost:8088
-```
-
 ---
 
 ## Environment Variables
 
 ### Backend `.env`
-
-```env
-APP_ENV=development
-APP_NAME=Text Guard
-APP_VERSION=0.1.0
-PORT=8088
-CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
-
-BLOCK_THRESHOLD=0.85
-REVIEW_THRESHOLD=0.45
-LOG_ALL_DECISIONS=true
-ENABLE_DEBUG_ENV=false
-MOCK_MODE=false
-
-GROQ_API_KEY=
-GROQ_MODEL=llama-3.1-8b-instant
-HF_API_TOKEN=
-HF_MODEL=google/flan-t5-small
-
-MONGO_URI=
-MONGODB_DB=text_guard
-MONGODB_COLLECTION=moderation_events
-MONGODB_TEST_CASES_COLLECTION=saved_test_cases
-MONGODB_POLICY_COLLECTION=policy_presets
-
-DEFAULT_WORKSPACE_ID=default
-WORKSPACE_SHARED_KEY=
-```
+| Variable | Value/Description |
+| --- | --- |
+| `MONGO_URI` | MongoDB Atlas connection string |
+| `GROQ_API_KEY` | Your Groq API Key |
+| `CORS_ORIGINS` | `https://your-frontend-domain.com` |
+| `APP_ENV` | `production` |
 
 ### Frontend `frontend/.env`
-
-```env
-VITE_API_BASE_URL=http://localhost:8088
-VITE_WORKSPACE_ID=default
-VITE_WORKSPACE_KEY=
-```
-
-### Environment Notes
-
-- `MOCK_MODE=true` makes `/moderate` return a safe mock response without real scoring.
-- If `WORKSPACE_SHARED_KEY` is set in the backend, the frontend must send the matching `VITE_WORKSPACE_KEY`.
-- MongoDB is required for review logs, analytics, test case storage, and policy presets.
-- If no model provider key is configured, the system still runs on rules only, but LLM scoring is skipped.
+| Variable | Value/Description |
+| --- | --- |
+| `VITE_API_BASE_URL` | Your backend service URL |
+| `VITE_WORKSPACE_ID` | Workspace identifier (default: `default`) |
 
 ---
 
@@ -418,18 +274,14 @@ This makes it possible to reuse one backend for multiple workspace contexts with
 
 ## Deployment
 
-The repo already includes a `Procfile` for backend deployment:
+### Backend (Render)
+1. **Root Directory**: `backend`
+2. **Build Command**: `pip install -r requirements.txt`
+3. **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
 
-```text
-web: cd backend && uvicorn main:app --host 0.0.0.0 --port ${PORT:-8088}
-```
-
-This is suitable for Render-style Python web deployment. For a typical split deployment:
-
-- deploy the **backend** as a FastAPI service,
-- deploy the **frontend** as a static Vite app,
-- set `VITE_API_BASE_URL` to the public backend URL,
-- and configure matching workspace credentials if you enable `WORKSPACE_SHARED_KEY`.
+### Frontend (GitHub Pages)
+1. Configure `VITE_API_BASE_URL` as a **GitHub Secret**.
+2. Deploy automatically via the included **GitHub Action** (`.github/workflows/deploy.yml`).
 
 ---
 
