@@ -1,8 +1,8 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  // Use relative asset paths so Pages can serve files from /docs or subpath.
   base: "./",
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
 });

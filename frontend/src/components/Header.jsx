@@ -1,62 +1,61 @@
 import React, { useEffect } from 'react';
-import { Home, MessageCircle, TerminalSquare } from 'lucide-react';
+import { motion as Motion } from 'framer-motion';
+import { NavLink, useLocation } from 'react-router-dom';
+import { ShieldAlert, ShieldCheck, Type } from 'lucide-react';
 
-export default function Header({ onNavigate = () => {} }) {
-  // ensure the app runs in light mode (removes leftover 'dark' class)
+const navItems = [
+  { to: '/', label: 'Check Text', icon: Type },
+  { to: '/review', label: 'Review', icon: ShieldAlert },
+];
+
+export default function Header() {
+  const location = useLocation();
+
   useEffect(() => {
     document.documentElement.classList.remove('dark');
   }, []);
 
   return (
-    <div className="sticky top-0 z-20 w-full border-b border-gray-200 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/70">
-      <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4">
-        {/* Logo */}
-        <button
-          onClick={() => onNavigate('/')}
-          className="select-none text-2xl font-bold tracking-tight text-gray-900 transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
-          style={{ fontFamily: "'Grand Hotel', cursive" }}
-          aria-label="InstaMod Home"
-        >
-          InstaMod
-        </button>
+    <header className="sticky top-0 z-20 px-3 py-3 sm:px-5">
+      <div className="tg-shell tg-header-wrap mx-auto flex items-center justify-between px-4 py-3 sm:px-6">
+        <NavLink to="/" className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/18 bg-[linear-gradient(145deg,_rgba(49,203,195,0.92),_rgba(76,92,211,0.84))] text-white shadow-[0_0_28px_rgba(88,113,255,0.25)]">
+            <ShieldCheck size={20} />
+          </div>
+          <div>
+            <div className="text-lg font-semibold tracking-tight text-white">Text Guard</div>
+            <div className="text-xs uppercase tracking-[0.24em] text-slate-300/70">Signal Review System</div>
+          </div>
+        </NavLink>
 
-        {/* Actions (no dark tiles, just clean icon buttons) */}
-        <nav className="flex items-center gap-2 text-gray-700">
-          <IconButton ariaLabel="Home" title="Home" onClick={() => onNavigate('/')}>
-            <Home size={20} />
-          </IconButton>
-          <IconButton ariaLabel="Messages" title="Messages" onClick={() => onNavigate('/chat')}>
-            <MessageCircle size={20} />
-          </IconButton>
-          <IconButton ariaLabel="Admin Console" title="Admin Console" onClick={() => onNavigate('/admin')}>
-            <TerminalSquare size={20} />
-          </IconButton>
-
-          {/* Avatar */}
-          <button
-            title="Demo User"
-            aria-label="Demo User"
-            className="ml-1 inline-flex h-9 w-9 select-none items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-orange-400 text-sm font-semibold text-white shadow-sm transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
-          >
-            IM
-          </button>
+        <nav className="relative flex items-center gap-1 rounded-full border border-white/10 bg-white/6 p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+          {navItems.map((item) => {
+            const ItemIcon = item.icon;
+            const isActive = location.pathname === item.to;
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className="relative"
+              >
+                <div className={`relative inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition ${isActive ? 'text-white' : 'text-slate-300 hover:text-white'}`}>
+                  {isActive ? (
+                    <Motion.span
+                      layoutId="nav-pill"
+                      className="absolute inset-0 rounded-full border border-cyan-300/16 bg-[linear-gradient(135deg,_rgba(73,211,190,0.22),_rgba(255,255,255,0.08))] shadow-[0_0_20px_rgba(73,211,190,0.14),inset_0_1px_0_rgba(255,255,255,0.1)]"
+                      transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                    />
+                  ) : null}
+                  <span className="relative z-10">
+                    <ItemIcon size={16} />
+                  </span>
+                  <span className="relative z-10">{item.label}</span>
+                </div>
+              </NavLink>
+            );
+          })}
         </nav>
       </div>
-    </div>
-  );
-}
-
-function IconButton({ children, onClick, title, ariaLabel }) {
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      aria-label={ariaLabel}
-      className="group inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
-    >
-      <span className="pointer-events-none leading-none">
-        {children /* lucide icons inherit currentColor; crisp on white */}
-      </span>
-    </button>
+    </header>
   );
 }

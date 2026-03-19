@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
-// eslint-disable-next-line no-unused-vars
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion as Motion } from 'framer-motion';
 import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
 
 /**
@@ -30,7 +29,7 @@ export default function Toast({ message, type = 'info', onClose }) {
 
   return (
     <AnimatePresence>
-      <motion.div
+      <Motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 50 }}
@@ -57,7 +56,7 @@ export default function Toast({ message, type = 'info', onClose }) {
             &times;
           </button>
         </div>
-      </motion.div>
+      </Motion.div>
     </AnimatePresence>
   );
 }
